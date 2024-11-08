@@ -6,18 +6,18 @@ from .serializers import *
 from .models import *
 
 
-class StockView(ListCreateAPIView):
-    """
-    Get method : A stock info if it exists
-    Post method : Not allowed
-    """
-    serializer_class = StockSerializer
+class StockView(APIView):  # Using Serializers # Bobby
+    def get(self, request):
+        try:
+            student_name = request.GET['name']
+            student = Stock.objects.filter(stock_name__contains=student_name)
 
-    def get_queryset(self):
-        student_name = self.request.GET.get('name', None)
-        if student_name:
-            return Stock.objects.filter(name__icontains=student_name)
-        return Stock.objects.none()
+            data = StockSerializer(student, many=True).data
+            return Response({"data": data}, status=status.HTTP_200_OK)
 
-    def post(self, request, *args, **kwargs):  # Can be used to override post method
-        return Response({"status": "POST method is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        except Exception as error:
+            print(error)
+            return Response({"status": "Internal Error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def post(self, request):
+        return Response({"status": "POST method is not allowed"}, status=status.HTTP_400_BAD_REQUEST)

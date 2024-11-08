@@ -8,4 +8,4 @@ class Stock(models.Model):
     stock_code = models.CharField(max_length=100)
 
     def __str__(self):
-        return f"{self.stock_name}:{self.stock_type}"
+        return f"{self.stock_name} - {self.stock_type}"

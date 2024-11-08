@@ -51,16 +51,15 @@ class StockView(ListCreateAPIView):
         # Query for stocks that match the filters
         queryset = Stock.objects.filter(filters)
 
-        if len(queryset) != 0:
-            print("Beta already exists")
-            return queryset  # Return the filtered queryset
-        else:
-            print("Beta doesnt exists")
-            # Update beta for the matched stocks
+        if len(queryset) == 1:
+            return queryset
+        elif len(queryset) == 0:
             beta = 1
             for stock in queryset:
                 stock.beta = beta
                 stock.save()
+        else:
+            print("There was a problem with the queryset")
 
         return queryset  # Return the filtered queryset with the updated beta
 

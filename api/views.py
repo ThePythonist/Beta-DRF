@@ -6,6 +6,7 @@ from .serializers import *
 from .models import *
 from django.db.models import Q
 from .scrape import *
+from persiantools import characters
 from .logging_conf import make_log
 import os
 
@@ -38,33 +39,25 @@ class BetaView(ListCreateAPIView):
 
             if len(queryset) == 1:
                 return queryset
-            elif len(queryset) == 0:  # Beta doesnt exists
+            elif len(queryset) == 0:  # Object doesnt exists
+
                 # return Beta.objects.none()
 
-                # if not os.path.exists(f"api/شاخص كل/شاخص كل-{start_date}-{end_date}.xlsx"):
-                #     fetch_stock_historical_data('شاخص كل', start_date, end_date)
-                # else:
-                #     make_log('info', f'market-history already exists for {start_date}-{end_date}')
-                #
-                # if not os.path.exists(f"api/{stock_name}/{stock_name}-{start_date}-{end_date}.xlsx"):
-                #     fetch_stock_historical_data(stock_name, start_date, end_date)
-                # else:
-                #     make_log('info', f'stock-history for {stock_name} already exists for {start_date}-{end_date}')
-                #
-                # beta = calculate_beta(stock_name, start_date, end_date)
-                #
-                # print(
-                #     f'Beta of {stock_name} in {start_date}-{end_date} is {calculate_beta(stock_name, start_date, end_date)}')
+                stock_name = characters.fa_to_ar(stock_name)  # Convert persian chars to arabic :/
 
-                beta = 1
-                market_index = 1
+                fetch_stock_historical_data('شاخص كل', start_date, end_date)
+
+                fetch_stock_historical_data(stock_name, start_date, end_date)
+
+                beta = calculate_beta(stock_name, start_date, end_date)
+
+                # print(f'Beta of {stock_name} in {start_date}-{end_date} is {beta}')
 
                 new_data = Beta.objects.create(
                     stock_name=stock_name,
                     start_date=start_date,
                     end_date=end_date,
                     value=beta,
-                    market_index=market_index,
                 )
 
                 return Beta.objects.filter(id=new_data.id)

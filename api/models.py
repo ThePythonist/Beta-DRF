@@ -10,7 +10,6 @@ class Beta(models.Model):
     start_date = models.CharField(max_length=8, validators=[MinLengthValidator(8)])
     end_date = models.CharField(max_length=8, validators=[MinLengthValidator(8)])
     value = models.FloatField(null=True, blank=True)
-    market_index = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.stock_name}-{self.start_date}-{self.end_date}"

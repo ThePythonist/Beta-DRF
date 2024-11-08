@@ -95,7 +95,17 @@ USE_L10N = True
 USE_TZ = True
 
 # Static files
-STATIC_URL = '/static/'
+
+STATIC_URL = 'static/'
+MEDIA_URL = 'media/'
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Define a general static folder for all apps
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

@@ -1,7 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from .logging_conf import make_log
+from .customlogs import make_log
 import selenium.common
 import time
 import os
@@ -45,8 +45,8 @@ def fetch_stock_historical_data(stock, start_date, end_date):
             driver.get(url)  # Replace with your target URL
             time.sleep(3)  # Wait for the elements to load
         except selenium.common.exceptions.WebDriverException:
-            make_log('error', 'failed to get the web page')
-            print('failed to get the web page')
+            make_log('error', 'Failed to get the web page')
+            print('Failed to get the web page')
             # print("Connection error. Make sure you are connected to internet and not using VPN. Trying again...")
             driver.quit()
             fetch_stock_historical_data(stock, start_date, end_date)
@@ -87,8 +87,8 @@ def fetch_stock_historical_data(stock, start_date, end_date):
 
             download_button.click()
         except selenium.common.exceptions.NoSuchElementException:
-            make_log('error', 'failed to get the web page elements')
-            print('failed to get the web page elements')
+            make_log('error', 'Failed to get the web page elements')
+            print('Failed to get the web page elements')
             # print("Connection error. Make sure you are connected to internet and not using VPN. Trying again...")
             driver.quit()
             fetch_stock_historical_data(stock, start_date, end_date)
@@ -113,16 +113,16 @@ def fetch_stock_historical_data(stock, start_date, end_date):
             if os.path.exists(old_filename):
                 os.rename(old_filename, new_filename)
 
-            make_log('info', f'created {stock}.xls')
+            make_log('info', f'Created {stock}.xls')
 
             # Create the cleaned file out of stock file and market-file
             create_clean_file(stock, start_date, end_date)
-            make_log('info', f'created {stock}.xlsx')
+            make_log('info', f'Created {stock}.xlsx')
 
             # Delete the .xls (unclean) stock file
             if os.path.exists(new_filename):
                 os.remove(new_filename)  # Delete the file
-                make_log('info', f'deleted {new_filename}')
+                make_log('info', f'Deleted {new_filename}')
             else:
                 make_log('error', f'{new_filename} doesnt exist')
             driver.quit()

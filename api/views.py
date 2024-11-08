@@ -7,17 +7,17 @@ from .models import *
 from django.db.models import Q
 from .scrape import *
 from persiantools import characters
-from .logging_conf import make_log
-import os
+from .customlogs import make_log, tictoc
 
 
 class BetaView(ListCreateAPIView):
     """
-    Get : Returns a list of stocks based on query parameters.
+    Get : Returns the beta coefficient for the requested stock in the requested timeframe
     Post : Not allowed.
     """
     serializer_class = BetaSerializer
 
+    @tictoc  # log the response time
     def get_queryset(self):
         stock_name = self.request.GET.get('stock_name', )
         start_date = self.request.GET.get('start_date', )

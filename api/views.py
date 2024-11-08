@@ -18,47 +18,48 @@ class BetaView(ListCreateAPIView):
     serializer_class = BetaSerializer
 
     def get_queryset(self):
-        stock_name = self.request.GET.get('stock_name', None)
-        start_date = self.request.GET.get('start_date', None)
-        end_date = self.request.GET.get('end_date', None)
+        stock_name = self.request.GET.get('stock_name', )
+        start_date = self.request.GET.get('start_date', )
+        end_date = self.request.GET.get('end_date', )
 
-        #     if not os.path.exists(f"api/شاخص كل/شاخص كل-{start_date}-{end_date}.xlsx"):
-        #         fetch_stock_historical_data('شاخص كل', start_date, end_date)
-        #     else:
-        #         make_log('info', f'market-history already exists for {start_date}-{end_date}')
-        #
-        #     if not os.path.exists(f"api/{stock_name}/{stock_name}-{start_date}-{end_date}.xlsx"):
-        #         fetch_stock_historical_data(stock_name, start_date, end_date)
-        #     else:
-        #         make_log('info', f'stock-history for {stock_name} already exists for {start_date}-{end_date}')
-        #
-        #     beta = calculate_beta(stock_name, start_date, end_date)
+        if stock_name and start_date and end_date:
+            #     if not os.path.exists(f"api/شاخص كل/شاخص كل-{start_date}-{end_date}.xlsx"):
+            #         fetch_stock_historical_data('شاخص كل', start_date, end_date)
+            #     else:
+            #         make_log('info', f'market-history already exists for {start_date}-{end_date}')
+            #
+            #     if not os.path.exists(f"api/{stock_name}/{stock_name}-{start_date}-{end_date}.xlsx"):
+            #         fetch_stock_historical_data(stock_name, start_date, end_date)
+            #     else:
+            #         make_log('info', f'stock-history for {stock_name} already exists for {start_date}-{end_date}')
+            #
+            #     beta = calculate_beta(stock_name, start_date, end_date)
 
-        # print(f'Beta of {stock_name} in {start_date}-{end_date} is {calculate_beta(stock_name, start_date, end_date)}')
+            # print(f'Beta of {stock_name} in {start_date}-{end_date} is {calculate_beta(stock_name, start_date, end_date)}')
 
-        # Prepare the filter criteria
-        filters = Q()
+            # Prepare the filter criteria
+            filters = Q()
 
-        if stock_name:
-            filters &= Q(stock_name__icontains=stock_name)
+            if stock_name:
+                filters &= Q(stock_name__icontains=stock_name)
 
-        if start_date:
-            filters &= Q(start_date__icontains=start_date)  # Filter using icontains for start_date
+            if start_date:
+                filters &= Q(start_date__icontains=start_date)  # Filter using icontains for start_date
 
-        if end_date:
-            filters &= Q(end_date__icontains=end_date)  # Filter using icontains for end_date
+            if end_date:
+                filters &= Q(end_date__icontains=end_date)  # Filter using icontains for end_date
 
-        # Query for stocks that match the filters
-        queryset = Beta.objects.filter(filters)
+            # Query for stocks that match the filters
+            queryset = Beta.objects.filter(filters)
 
-        if len(queryset) == 1:
-            return queryset
-        elif len(queryset) == 0:
-            return queryset
+            if len(queryset) == 1:
+                return queryset
+            elif len(queryset) == 0:  # Beta doesnt exists
+                return Beta.objects.none()
+            else:
+                print("There was a problem with the queryset")
         else:
-            print("There was a problem with the queryset")
-
-        return queryset  # Return the filtered queryset with the updated beta
+            return Beta.objects.none()
 
     def post(self, request, *args, **kwargs):
         return Response({"status": "POST method is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

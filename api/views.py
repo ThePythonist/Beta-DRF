@@ -10,12 +10,12 @@ from .logging_conf import make_log
 import os
 
 
-class StockView(ListCreateAPIView):
+class BetaView(ListCreateAPIView):
     """
     Get : Returns a list of stocks based on query parameters.
     Post : Not allowed.
     """
-    serializer_class = StockSerializer
+    serializer_class = BetaSerializer
 
     def get_queryset(self):
         stock_name = self.request.GET.get('stock_name', None)
@@ -49,15 +49,12 @@ class StockView(ListCreateAPIView):
             filters &= Q(end_date__icontains=end_date)  # Filter using icontains for end_date
 
         # Query for stocks that match the filters
-        queryset = Stock.objects.filter(filters)
+        queryset = Beta.objects.filter(filters)
 
         if len(queryset) == 1:
             return queryset
         elif len(queryset) == 0:
-            beta = 1
-            for stock in queryset:
-                stock.beta = beta
-                stock.save()
+            return queryset
         else:
             print("There was a problem with the queryset")
 

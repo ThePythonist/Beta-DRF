@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import *
 
 
-class StockSerializer(serializers.ModelSerializer):
+class BetaSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Stock
+        model = Beta
         fields = "__all__"

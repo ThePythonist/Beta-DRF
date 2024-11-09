@@ -9,6 +9,36 @@ from .scrape import *
 from persiantools import characters
 from .customlogs import make_log, tictoc
 import jdatetime
+from .scrape import funds
+
+
+def is_valid_jalali_date(date_str):
+    # Ensure the date_str has exactly 8 digits
+    if len(date_str) != 8 or not date_str.isdigit():
+        return False
+
+    # Define the minimum allowed date (13870914)
+    min_date = jdatetime.date(1387, 9, 14)
+
+    # Parse the input string into a Jalali date
+    try:
+        year = int(date_str[:4])
+        month = int(date_str[4:6])
+        day = int(date_str[6:])
+        jalali_date = jdatetime.date(year, month, day)
+    except ValueError:
+        return False  # Invalid date, such as out-of-range month or day
+
+    # Check if the Jalali date is not earlier than the minimum date
+    if jalali_date < min_date:
+        return False
+
+    # Check if the Jalali date is not later than today's date
+    today = jdatetime.date.today()  # Get today's Jalali date
+    if jalali_date > today:
+        return False
+
+    return True
 
 
 class BetaView(ListCreateAPIView):
@@ -51,18 +81,23 @@ class BetaView(ListCreateAPIView):
                 today_day = jdatetime.datetime.now().strftime("%d")
 
                 fetch_stock_historical_data('شاخص كل', "13870914", f"{today_year}{today_month}{today_day}")
-                fetch_stock_historical_data(f'{stock_name}', "13870914", f"{today_year}{today_month}{today_day}")
 
-                beta = calculate_beta(stock_name, start_date, end_date)
+                if stock_name in [i["name"] for i in funds] and is_valid_jalali_date(
+                        start_date) and is_valid_jalali_date(end_date):
+                    fetch_stock_historical_data(f'{stock_name}', "13870914", f"{today_year}{today_month}{today_day}")
 
-                new_data = Beta.objects.create(
-                    stock_name=stock_name,
-                    start_date=start_date,
-                    end_date=end_date,
-                    value=beta,
-                )
+                    beta = calculate_beta(stock_name, start_date, end_date)
 
-                return Beta.objects.filter(id=new_data.id)
+                    new_data = Beta.objects.create(
+                        stock_name=stock_name,
+                        start_date=start_date,
+                        end_date=end_date,
+                        value=beta,
+                    )
+
+                    return Beta.objects.filter(id=new_data.id)
+                else:
+                    return Beta.objects.none()
             else:
                 print("There was a problem with the queryset")
         else:

@@ -20,17 +20,17 @@ funds = [
 
 def fetch_stock_historical_data(stock, start_date, end_date):
     if stock == "شاخص كل":
-        already_fetched = f"api/{stock}/{stock}-{start_date}-{end_date}.xls"
+        already_fetched = f"api/{stock}-{start_date}-{end_date}/{stock}-{start_date}-{end_date}.xls"
     else:
-        already_fetched = f"api/{stock}/"
+        already_fetched = f"api/{stock}-{start_date}-{end_date}/"
 
     if not os.path.exists(already_fetched):
         # Set Chrome options
         chrome_options = webdriver.ChromeOptions()
-        download_dir = os.getcwd() + f"\\api\\{stock}"
+        download_dir = os.getcwd() + f"\\api\\{stock}-{start_date}-{end_date}"
 
         prefs = {
-            "download.default_directory": download_dir,  # Set download directory to Desktop
+            "download.default_directory": download_dir,  # Set download directory
             "download.prompt_for_download": False,  # Disable download prompt
             "download.directory_upgrade": True,  # Allow directory upgrade
             "safebrowsing.enabled": True  # Enable safe browsing
@@ -132,7 +132,7 @@ def fetch_stock_historical_data(stock, start_date, end_date):
 
 def save_market_data_in_db(stock, start_date, end_date):
     if stock == "شاخص كل":
-        market_file = f"api/شاخص كل/شاخص كل-{start_date}-{end_date}.xls"
+        market_file = f"api/{stock}-{start_date}-{end_date}/{stock}-{start_date}-{end_date}.xls"
         # Read the HTML file which returns a list of DataFrames
         market_df_list = pandas.read_html(market_file)
 
@@ -155,7 +155,7 @@ def save_market_data_in_db(stock, start_date, end_date):
 
 
 def save_stock_data_in_db(stock, start_date, end_date):
-    folder = os.getcwd() + f"\\api\\{stock}"
+    folder = os.getcwd() + f"\\api\\{stock}-{start_date}-{end_date}"
     files = os.listdir(folder)
 
     # Filter for .csv files
@@ -215,8 +215,7 @@ def calculate_beta(stock, start_date, end_date):
 
     # If either list is empty, return None or handle the error
     if len(stock_returns) == 0 or len(market_returns) == 0:
-        # return None
-        print('*******bug here*******')
+        return None
 
     # Convert lists to numpy arrays
     stock_returns = numpy.array(stock_returns)

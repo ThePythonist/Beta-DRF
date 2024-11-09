@@ -8,6 +8,7 @@ from django.db.models import Q
 from .scrape import *
 from persiantools import characters
 from .customlogs import make_log, tictoc
+import jdatetime
 
 
 class BetaView(ListCreateAPIView):
@@ -45,13 +46,14 @@ class BetaView(ListCreateAPIView):
 
                 stock_name = characters.fa_to_ar(stock_name)  # Convert persian chars to arabic :/
 
-                fetch_stock_historical_data('شاخص كل', start_date, end_date)
+                today_year = jdatetime.datetime.now().strftime("%Y")
+                today_month = jdatetime.datetime.now().strftime("%m")
+                today_day = jdatetime.datetime.now().strftime("%d")
 
-                fetch_stock_historical_data(stock_name, start_date, end_date)
-
-                beta = calculate_beta(stock_name, start_date, end_date)
-
-                # print(f'Beta of {stock_name} in {start_date}-{end_date} is {beta}')
+                fetch_stock_historical_data('شاخص كل', "13870914", f"{today_year}{today_month}{today_day}")
+                fetch_stock_historical_data(f'{stock_name}', "13870914", f"{today_year}{today_month}{today_day}")
+                # beta = calculate_beta(stock_name, start_date, end_date)
+                beta = 1
 
                 new_data = Beta.objects.create(
                     stock_name=stock_name,

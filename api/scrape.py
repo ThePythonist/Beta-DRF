@@ -2,28 +2,32 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from .customlogs import make_log
+from .models import *
 import selenium.common
 import time
 import os
 import pandas
 import numpy
+import jdatetime
+
+funds = [
+    {'name': "كارا", "type": "درآمد ثابت", "code": "71843282162462661"},
+    {'name': "آگاس", "type": "سهامی", "code": "33887145736684266"},
+    {'name': "تمشك", "type": "صندوق در صندوق", "code": "53145304508578701"},
+]
 
 
 def fetch_stock_historical_data(stock, start_date, end_date):
-
-    already_fetched = f"api/{stock}/{stock}-{start_date}-{end_date}.xls"
     if stock == "شاخص كل":
-        pass
+        already_fetched = f"api/{stock}/{stock}-{start_date}-{end_date}.xls"
     else:
-        already_fetched += "x"
+        already_fetched = f"api/{stock}/"
 
     if not os.path.exists(already_fetched):
         # Set Chrome options
         chrome_options = webdriver.ChromeOptions()
         download_dir = os.getcwd() + f"\\api\\{stock}"
 
-        # Create a ChromeOptions object
-        chrome_options = webdriver.ChromeOptions()
         prefs = {
             "download.default_directory": download_dir,  # Set download directory to Desktop
             "download.prompt_for_download": False,  # Disable download prompt
@@ -38,64 +42,52 @@ def fetch_stock_historical_data(stock, start_date, end_date):
         # Open the web page
         if stock == 'شاخص كل':
             url = 'https://fipiran.com/DataService/IndexIndex'
-        else:
-            url = 'https://fipiran.com/DataService/TradeIndex'
+            try:
+                driver.get(url)  # Replace with your target URL
+                time.sleep(3)  # Wait for the elements to load
 
-        try:
-            driver.get(url)  # Replace with your target URL
-            time.sleep(3)  # Wait for the elements to load
-        except selenium.common.exceptions.WebDriverException:
-            make_log('error', 'Failed to get the web page')
-            print('Failed to get the web page')
-            # print("Connection error. Make sure you are connected to internet and not using VPN. Trying again...")
-            driver.quit()
-            fetch_stock_historical_data(stock, start_date, end_date)
+                ok_button = driver.find_element(
+                    By.XPATH, '/html/body/div[4]/div/div[3]/button[1]'
+                )  # Update selector
 
-        try:
-            ok_button = driver.find_element(
-                By.XPATH, '/html/body/div[4]/div/div[3]/button[1]'
-            )  # Update selector
+                ok_button.click()
 
-            ok_button.click()
+                # Fill the input fields and click the download button (same as previous example)
+                symbol = driver.find_element(By.XPATH,
+                                             '/html/body/section[2]/div/form/div/div[1]/input[1]')  # Update selector
+                startdate = driver.find_element(By.XPATH,
+                                                '/html/body/section[2]/div/form/div/div[2]/input')  # Update selector
+                enddate = driver.find_element(By.XPATH,
+                                              '/html/body/section[2]/div/form/div/div[3]/input')  # Update selector
 
-            # Fill the input fields and click the download button (same as previous example)
-            symbol = driver.find_element(By.XPATH,
-                                         '/html/body/section[2]/div/form/div/div[1]/input[1]')  # Update selector
-            startdate = driver.find_element(By.XPATH,
-                                            '/html/body/section[2]/div/form/div/div[2]/input')  # Update selector
-            enddate = driver.find_element(By.XPATH,
-                                          '/html/body/section[2]/div/form/div/div[3]/input')  # Update selector
+                symbol.send_keys(stock)
+                time.sleep(1)
 
-            symbol.send_keys(stock)
-            time.sleep(1)
+                suggestions = driver.find_elements(By.CLASS_NAME, 'ui-menu-item')
 
-            suggestions = driver.find_elements(By.CLASS_NAME, 'ui-menu-item')
+                # Iterate through the suggested items and click on the one we are looking for
+                for item in suggestions:
+                    if item.text == stock:
+                        item.click()
 
-            # Iterate through the suggested items and click on the one we are looking for
-            for item in suggestions:
-                if item.text == stock:
-                    item.click()
+                startdate.send_keys(start_date)
+                enddate.send_keys(end_date)
 
-            startdate.send_keys(start_date)
-            enddate.send_keys(end_date)
+                time.sleep(3)
 
-            time.sleep(3)
+                download_button = driver.find_element(
+                    By.XPATH, '/html/body/section[2]/div/form/div/div[4]/input'
+                )  # Update selector
 
-            download_button = driver.find_element(
-                By.XPATH, '/html/body/section[2]/div/form/div/div[4]/input'
-            )  # Update selector
+                download_button.click()
+                time.sleep(3)
+            except selenium.common.exceptions.NoSuchElementException:
+                make_log('error', 'Failed to get the web page elements')
+                print('Failed to get the web page elements')
+                # print("Connection error. Make sure you are connected to internet and not using VPN. Trying again...")
+                driver.quit()
+                fetch_stock_historical_data(stock, start_date, end_date)
 
-            download_button.click()
-        except selenium.common.exceptions.NoSuchElementException:
-            make_log('error', 'Failed to get the web page elements')
-            print('Failed to get the web page elements')
-            # print("Connection error. Make sure you are connected to internet and not using VPN. Trying again...")
-            driver.quit()
-            fetch_stock_historical_data(stock, start_date, end_date)
-
-        time.sleep(2)
-
-        if stock == 'شاخص كل':
             # Rename the downloaded file
             old_filename = os.path.join(download_dir, 'IndexData.xls')  # Change this to the expected filename
             new_filename = os.path.join(download_dir, f'{stock}-{start_date}-{end_date}.xls')  # Desired new filename
@@ -104,63 +96,89 @@ def fetch_stock_historical_data(stock, start_date, end_date):
             if os.path.exists(old_filename):
                 os.rename(old_filename, new_filename)
                 driver.quit()
+
+            # Save market index historical data in local DB for future requests
+            save_market_data_in_db(stock, start_date, end_date)
+
         else:
-            # Rename the downloaded file
-            old_filename = os.path.join(download_dir, 'symbolData.xls')  # Change this to the expected filename
-            new_filename = os.path.join(download_dir, f'{stock}-{start_date}-{end_date}.xls')  # Desired new filename
-
-            # Rename the file if it exists
-            if os.path.exists(old_filename):
-                os.rename(old_filename, new_filename)
-
-            make_log('info', f'Created {stock}.xls')
-
-            # Create the cleaned file out of stock file and market-file
-            create_clean_file(stock, start_date, end_date)
-            make_log('info', f'Created {stock}.xlsx')
-
-            # Delete the .xls (unclean) stock file
-            if os.path.exists(new_filename):
-                os.remove(new_filename)  # Delete the file
-                make_log('info', f'Deleted {new_filename}')
+            for i in funds:
+                if i["name"] == stock:
+                    code = i["code"]
+                    break
             else:
-                make_log('error', f'{new_filename} doesnt exist')
-            driver.quit()
+                print("Fund not found")
+
+            url = f"https://www.tsetmc.com/instInfo/{code}"
+
+            try:
+                driver.get(url)  # Replace with your target URL
+                time.sleep(4)  # Wait for the elements to load
+
+                download_button = driver.find_element(
+                    By.XPATH, '/html/body/div/div/div[2]/div[3]/div[1]/div[2]/div[4]'
+                )  # Update selector
+
+                download_button.click()
+                time.sleep(3)  # Wait for the elements to load
+
+                save_stock_data_in_db(stock, start_date, end_date)
+
+            except selenium.common.exceptions.WebDriverException:
+                print('Failed to get the web page')
+                fetch_stock_historical_data(stock, start_date, end_date)
+                driver.quit()
 
 
-def create_clean_file(stock, start_date, end_date):
-    if not os.path.exists(f"api/{stock}/{stock}-{start_date}-{end_date}.xlsx"):
+def save_market_data_in_db(stock, start_date, end_date):
+    if stock == "شاخص كل":
         market_file = f"api/شاخص كل/شاخص كل-{start_date}-{end_date}.xls"
-        stock_file = f"api/{stock}/{stock}-{start_date}-{end_date}.xls"
-
         market_df = pandas.read_html(market_file)
+
+        market_dates = market_df[0]['dateissue'].dropna().values
+        market_dates = market_dates.tolist()
+
         market_returns = market_df[0]['Value'].dropna().values
         market_returns = market_returns.tolist()
-        # print(market_returns)
-        try:
-            stock_df = pandas.read_html(stock_file)
 
-            stock_returns = stock_df[0]['ClosePrice'].dropna().values
-            stock_returns = stock_returns.tolist()
-            # print(stock_returns)
+        for a, b in zip(market_dates, market_returns):
+            MarketIndex.objects.create(
+                date=a,
+                price=b
+            )
 
-            # Create a DataFrame from the two lists
-            data = {
-                'stock_returns': stock_returns,
-                'market_returns': market_returns,
-            }
-            combined_df = pandas.DataFrame(data)
 
-            # Save the clean DataFrame to an Excel file
-            output_file = f"api/{stock}/{stock}-{start_date}-{end_date}.xlsx"
-            combined_df.to_excel(output_file, index=False)
+def save_stock_data_in_db(stock, start_date, end_date):
+    folder = os.getcwd() + f"\\api\\{stock}"
+    files = os.listdir(folder)
+    # Filter for .csv files
+    csv_files = [file for file in files if file.endswith('.csv')]
 
-            make_log('info', f'Created {output_file}')
+    # Check if there is exactly one CSV file
+    if len(csv_files) == 1:
+        csv_file_path = os.path.join(folder, csv_files[0])
+        # Read the CSV file using pandas
+        df = pandas.read_csv(csv_file_path)
+        stock_dates_gr = df['<DTYYYYMMDD>'].dropna().values
+        stock_dates = []
+        for i in stock_dates_gr:
+            year = int(str(i)[:4])
+            month = int(str(i)[4:6])
+            day = int(str(i)[6:])
+            jdate = jdatetime.datetime.fromgregorian(day=day, month=month, year=year)
+            i = f"{jdate.strftime('%Y')}{jdate.strftime('%m')}{jdate.strftime('%d')}"
+            stock_dates.append(i)
 
-        except ValueError:
-            print("BUG HERE : scrape.py line 156")
-            # Stock-historical-data file is damaged or not downloaded so download it first
-            # fetch_stock_historical_data(stock, start_date, end_date)
+        stock_returns = df['<CLOSE>'].dropna().values
+
+        for a, b in zip(stock_dates, stock_returns):
+            Stock.objects.create(
+                stock_name=stock,
+                date=a,
+                price=b
+            )
+
+    else:
+        print("CSV file is not unique")
 
 
 def calculate_beta(stock, start_date, end_date):

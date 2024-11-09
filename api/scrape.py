@@ -9,6 +9,7 @@ import os
 import pandas
 import numpy
 import jdatetime
+from django.db import transaction
 
 funds = [
     {'name': "كارا", "type": "درآمد ثابت", "code": "71843282162462661"},
@@ -132,32 +133,42 @@ def fetch_stock_historical_data(stock, start_date, end_date):
 def save_market_data_in_db(stock, start_date, end_date):
     if stock == "شاخص كل":
         market_file = f"api/شاخص كل/شاخص كل-{start_date}-{end_date}.xls"
-        market_df = pandas.read_html(market_file)
+        # Read the HTML file which returns a list of DataFrames
+        market_df_list = pandas.read_html(market_file)
 
-        market_dates = market_df[0]['dateissue'].dropna().values
-        market_dates = market_dates.tolist()
+        # Get the first DataFrame from the list
+        market_df = market_df_list[0]
 
-        market_returns = market_df[0]['Value'].dropna().values
-        market_returns = market_returns.tolist()
+        # Ensure 'dateissue' and 'Value' columns are in the DataFrame
+        market_dates = market_df['dateissue'].dropna().values
+        market_returns = market_df['Value'].dropna().values
 
-        for a, b in zip(market_dates, market_returns):
-            MarketIndex.objects.create(
-                date=a,
-                price=b
-            )
+        # Prepare the list of MarketIndex objects to be created
+        market_entries = [
+            MarketIndex(date=row['dateissue'], price=row['Value'])
+            for _, row in market_df.iterrows()
+        ]
+
+        # Bulk insert all entries at once in a transaction for efficiency
+        with transaction.atomic():
+            MarketIndex.objects.bulk_create(market_entries)
 
 
 def save_stock_data_in_db(stock, start_date, end_date):
     folder = os.getcwd() + f"\\api\\{stock}"
     files = os.listdir(folder)
+
     # Filter for .csv files
     csv_files = [file for file in files if file.endswith('.csv')]
 
     # Check if there is exactly one CSV file
     if len(csv_files) == 1:
         csv_file_path = os.path.join(folder, csv_files[0])
+
         # Read the CSV file using pandas
         df = pandas.read_csv(csv_file_path)
+
+        # Process the dates and prices
         stock_dates_gr = df['<DTYYYYMMDD>'].dropna().values
         stock_dates = []
         for i in stock_dates_gr:
@@ -165,17 +176,20 @@ def save_stock_data_in_db(stock, start_date, end_date):
             month = int(str(i)[4:6])
             day = int(str(i)[6:])
             jdate = jdatetime.datetime.fromgregorian(day=day, month=month, year=year)
-            i = f"{jdate.strftime('%Y')}{jdate.strftime('%m')}{jdate.strftime('%d')}"
-            stock_dates.append(i)
+            formatted_date = f"{jdate.strftime('%Y')}{jdate.strftime('%m')}{jdate.strftime('%d')}"
+            stock_dates.append(formatted_date)
 
         stock_returns = df['<CLOSE>'].dropna().values
 
-        for a, b in zip(stock_dates, stock_returns):
-            Stock.objects.create(
-                stock_name=stock,
-                date=a,
-                price=b
-            )
+        # Prepare list of Stock instances to bulk insert
+        stock_data = [
+            Stock(stock_name=stock, date=a, price=b)
+            for a, b in zip(stock_dates, stock_returns)
+        ]
+
+        # Wrap the bulk insert in a transaction for atomicity
+        with transaction.atomic():
+            Stock.objects.bulk_create(stock_data)
 
     else:
         print("CSV file is not unique")

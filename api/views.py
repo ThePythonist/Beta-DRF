@@ -52,6 +52,7 @@ class BetaView(ListCreateAPIView):
 
                 fetch_stock_historical_data('شاخص كل', "13870914", f"{today_year}{today_month}{today_day}")
                 fetch_stock_historical_data(f'{stock_name}', "13870914", f"{today_year}{today_month}{today_day}")
+
                 beta = calculate_beta(stock_name, start_date, end_date)
 
                 new_data = Beta.objects.create(

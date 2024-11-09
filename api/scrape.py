@@ -182,26 +182,37 @@ def save_stock_data_in_db(stock, start_date, end_date):
 
 
 def calculate_beta(stock, start_date, end_date):
-    file_name = f"api/{stock}/{stock}-{start_date}-{end_date}.xlsx"
-    df = pandas.read_excel(file_name)
+    stock_data = Stock.objects.filter(stock_name=stock)
+    market_data = MarketIndex.objects.all()
 
-    # Drop rows from dataframe where either 'STOCK' or 'MARKET' are NaN
-    df = df.dropna(subset=['stock_returns', 'market_returns'])
+    stock_returns = []
+    market_returns = []
 
-    # Extract stock and market returns
-    stock_returns = df['stock_returns'].values  # Convert to numpy array
-    market_returns = df['market_returns'].values  # Convert to numpy array
+    for stock_entry in stock_data:
+        stock_date = str(stock_entry.date)  # Keep the date as a string (e.g., '20240801')
 
-    # Prepare the data dictionary
-    data = {
-        'stock_returns': stock_returns.tolist(),
-        'market_returns': market_returns.tolist()
-    }
+        # Check if the stock date is within the range (compare as strings)
+        if start_date <= stock_date <= end_date:
+            # Ensure the market data corresponds to the same date
+            market_entry = market_data.filter(date=stock_entry.date).first()
+            if market_entry:
+                stock_returns.append(stock_entry.price)
+                market_returns.append(market_entry.price)
 
-    # Calculate beta
-    covariance = numpy.cov(data['stock_returns'], data['market_returns'])[0][1]
-    # ddof=1 for sample variance
-    market_variance = numpy.var(data['market_returns'], ddof=1)
+    # If either list is empty, return None or handle the error
+    if len(stock_returns) == 0 or len(market_returns) == 0:
+        # return None
+        print('*******bug here*******')
+
+    # Convert lists to numpy arrays
+    stock_returns = numpy.array(stock_returns)
+    market_returns = numpy.array(market_returns)
+
+    # Calculate covariance and market variance
+    covariance = numpy.cov(stock_returns, market_returns)[0][1]
+    market_variance = numpy.var(market_returns, ddof=1)
+
+    # Calculate Beta
     beta = covariance / market_variance
 
     return beta

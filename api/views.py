@@ -3,7 +3,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.generics import *
 from .serializers import *
-from .models import *
 from django.db.models import Q
 from .scrape import *
 from persiantools import characters
@@ -55,26 +54,27 @@ class BetaView(ListCreateAPIView):
         end_date = self.request.GET.get('end_date', )
 
         if stock_name and start_date and end_date:
+            stock_name = characters.fa_to_ar(stock_name)  # Convert persian chars to arabic :/
+
             filters = Q()
             if stock_name:
                 filters &= Q(stock_name__icontains=stock_name)
 
             if start_date:
-                filters &= Q(start_date__icontains=start_date)  # Filter using icontains for start_date
+                filters &= Q(start_date=start_date)  # or use start_date__gte=start_date if a range is intended
 
             if end_date:
-                filters &= Q(end_date__icontains=end_date)  # Filter using icontains for end_date
+                filters &= Q(end_date=end_date)  # or use end_date__lte=end_date if a range is intended
 
             # Query for stocks that match the filters
             queryset = Beta.objects.filter(filters)
 
+            # print("SQL Query: ", queryset.query)
+            # print("Queryset length: ", len(queryset))
+
             if len(queryset) == 1:
                 return queryset
             elif len(queryset) == 0:  # Object doesnt exists
-
-                # return Beta.objects.none()
-
-                stock_name = characters.fa_to_ar(stock_name)  # Convert persian chars to arabic :/
 
                 today_year = jdatetime.datetime.now().strftime("%Y")
                 today_month = jdatetime.datetime.now().strftime("%m")

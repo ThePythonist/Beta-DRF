@@ -10,6 +10,7 @@ import pandas
 import numpy
 import jdatetime
 from django.db import transaction
+from persiantools import characters
 
 funds = [
     {'name': "كارا", "type": "درآمد ثابت", "code": "71843282162462661"},
@@ -140,12 +141,14 @@ def save_market_data_in_db(stock, start_date, end_date):
         market_df = market_df_list[0]
 
         # Ensure 'dateissue' and 'Value' columns are in the DataFrame
-        market_dates = market_df['dateissue'].dropna().values
-        market_returns = market_df['Value'].dropna().values
+        market_df = market_df.dropna(subset=['dateissue', 'Value'])  # Drop rows with missing 'dateissue' or 'Value'
+
+        # Calculate the percentage change for returns
+        market_df['return_rate'] = market_df['Value'].pct_change().fillna(0)  # Calculate returns from price
 
         # Prepare the list of MarketIndex objects to be created
         market_entries = [
-            MarketIndex(date=row['dateissue'], price=row['Value'])
+            MarketIndex(date=row['dateissue'], price=row['Value'], return_rate=row['return_rate'])
             for _, row in market_df.iterrows()
         ]
 
@@ -179,12 +182,13 @@ def save_stock_data_in_db(stock, start_date, end_date):
             formatted_date = f"{jdate.strftime('%Y')}{jdate.strftime('%m')}{jdate.strftime('%d')}"
             stock_dates.append(formatted_date)
 
-        stock_returns = df['<CLOSE>'].dropna().values
+        stock_prices = df['<CLOSE>'].dropna().values
+        stock_returns = pandas.Series(stock_prices).pct_change().fillna(0).values
 
         # Prepare list of Stock instances to bulk insert
         stock_data = [
-            Stock(stock_name=stock, date=a, price=b)
-            for a, b in zip(stock_dates, stock_returns)
+            Stock(stock_name=characters.fa_to_ar(stock), date=a, price=b, return_rate=c)
+            for a, b, c in zip(stock_dates, stock_returns, stock_returns)
         ]
 
         # Wrap the bulk insert in a transaction for atomicity
@@ -210,8 +214,8 @@ def calculate_beta(stock, start_date, end_date):
             # Ensure the market data corresponds to the same date
             market_entry = market_data.filter(date=stock_entry.date).first()
             if market_entry:
-                stock_returns.append(stock_entry.price)
-                market_returns.append(market_entry.price)
+                stock_returns.append(stock_entry.return_rate)
+                market_returns.append(market_entry.return_rate)
 
     # If either list is empty, return None or handle the error
     if len(stock_returns) == 0 or len(market_returns) == 0:

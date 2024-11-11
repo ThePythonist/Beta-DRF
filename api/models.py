@@ -8,11 +8,13 @@ class Stock(models.Model):
     stock_name = models.CharField(max_length=255)
     date = models.CharField(max_length=8, validators=[MinLengthValidator(8)])
     price = models.FloatField(null=True, blank=True)
+    return_rate = models.FloatField(null=True, blank=True)
 
 
 class MarketIndex(models.Model):
     date = models.CharField(max_length=8, validators=[MinLengthValidator(8)])
     price = models.FloatField(null=True, blank=True)
+    return_rate = models.FloatField(null=True, blank=True)
 
 
 class Beta(models.Model):

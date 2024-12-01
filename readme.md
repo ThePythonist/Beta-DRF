@@ -1,4 +1,4 @@
-# Beta-Track : Stock Beta Coefficient API
+# Stock Beta Coefficient API
 
 ## Design Decisions
 

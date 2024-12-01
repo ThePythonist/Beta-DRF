@@ -1,4 +1,4 @@
-# Beta-Track : Persian Stock Beta Coefficient API
+# Beta-Track : Stock Beta Coefficient API
 
 ## Design Decisions
 
@@ -10,7 +10,7 @@
 - **Date Handling**: Jalali dates are used for consistency in a Persian context, leveraging the `jdatetime` library for
   conversions and validations.
 
-This project provides an API for fetching stock and market prices, calculating returns, and determining the beta value
+This project provides an API for fetching stock and market prices of Iran’s Stock Market, calculating returns, and determining the beta value
 for each stock within a specified timeframe.
 
 ## Features

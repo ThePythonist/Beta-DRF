@@ -1,5 +1,8 @@
 # Stock Beta Coefficient API
 
+This project provides an API for fetching stock and market prices of Iran’s Stock Market, calculating returns, and
+determining the beta value for each stock within a specified timeframe.
+
 ## Design Decisions
 
 - **Framework**: Django REST Framework was chosen for its robust features and ease of use in building REST APIs.
@@ -9,9 +12,6 @@
   calculations of beta values.
 - **Date Handling**: Jalali dates are used for consistency in a Persian context, leveraging the `jdatetime` library for
   conversions and validations.
-
-This project provides an API for fetching stock and market prices of Iran’s Stock Market, calculating returns, and determining the beta value
-for each stock within a specified timeframe.
 
 ## Features
 

@@ -25,6 +25,7 @@ determining the beta value for each stock within a specified timeframe.
 - [Usage](#usage)
 - [API Endpoints](#api-endpoints)
     - [Get Beta Coefficient](#get-beta-coefficient)
+- [Caching System](#caching-system)
 - [Logging](#logging)
 - [Contributing](#contributing)
 - [License](#license)
